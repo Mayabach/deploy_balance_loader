@@ -17,7 +17,7 @@ ec2_client = session.client('ec2')
 response = ec2_client.create_key_pair(KeyName=key_name)
 key_material = response['KeyMaterial']
 ssh_commands = ["sudo apt-get update",
-                "sudo apt-get install -y python3-pip git",
+                "sudo apt-get install -y python3-pip git python3-requests",
                 "git clone https://github.com/Mayabach/deploy_balance_loader.git",
                 "sudo pip3 install -r deploy_balance_loader/requirements.txt"]
 
