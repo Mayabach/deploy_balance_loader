@@ -107,7 +107,7 @@ def get_work():
     global workQueue
     if len(workQueue) > 0:
         job = workQueue.pop()
-        app.logger.info(job)
+        app.logger.info(job.__dict__)
         return jsonify(json.dumps(job.__dict__)), 200
     else:
         return jsonify({}), 200
