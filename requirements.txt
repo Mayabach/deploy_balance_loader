@@ -1,5 +1,2 @@
 boto3
 Flask
-paramiko
-requests
-pyopenssl
