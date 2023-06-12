@@ -33,6 +33,7 @@ class Job:
         self.time = r_time
 
 
+
 def spawn_worker():
     global key_name, instance_dns, key_pem, conf
     ec2_client = boto3.client('ec2', region_name='eu-west-1')
@@ -105,7 +106,7 @@ def try_get_node_quota():
 def get_work():
     global workQueue
     if len(workQueue) > 0:
-        return jsonify(workQueue.pop().__dict__()), 200
+        return jsonify(workQueue.pop().__dict__), 200
     else:
         return jsonify({}), 200
 
