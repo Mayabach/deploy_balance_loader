@@ -49,7 +49,7 @@ def spawn_worker():
     ec2_client.get_waiter('instance_running').wait(InstanceIds=instance['InstanceId'])
     response = ec2_client.describe_instances(InstanceIds=instance['InstanceId'])
     # Execute commands on the instances
-    json_data = {"parentPublicIp": instance_dns, "otherPublicIp": other_dns, "InstanceId": instance['InstanceId']}
+    json_data = {"parentPublicDNS": instance_dns, "otherPublicDNS": other_dns, "InstanceId": instance['InstanceId']}
     ssh_commands.append(f"cd deploy_balance_loader; echo '{json.dumps(json_data)}' "
                         f"> conf.json; nohup sudo python3 worker.py > worker.log 2>&1 &")
     ssh = paramiko.SSHClient()
@@ -100,7 +100,7 @@ def get_work():
         return jsonify({}), 200
 
 
-@app.route('/health', methods=['PUT'])
+@app.route('/health', methods=['GET'])
 def health():
     return jsonify({'OK'}), 200
 

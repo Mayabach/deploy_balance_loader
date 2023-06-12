@@ -121,6 +121,5 @@ for i, instance in enumerate(ubuntu_instances):
 
 print("Instances initialized.")
 instance_dns = [instance.publicDNS for instance in ubuntu_instances]
-print(f"Work can be sent to: https://<<dns-name>>:5000/enqueue,\n"
-      f"Work can be retrieved through: https://<<ip>>:5000/pullCompleted\n"
-      f"From IPs: {instance_dns} ")
+for dns_name in instance_dns:
+    print(f"Work can be sent to: https://{dns_name}:5000")
