@@ -15,12 +15,12 @@ ubuntu_20_04_ami = "ami-0136ddddd07f0584f"
 key_name = f"CCC-Maya-{datetime.datetime.now().timestamp()}"
 key_pem = f"{key_name}.pem"
 session = boto3.Session(profile_name='maya-uni', region_name='eu-west-1')
-ec2_client = session.client('ec2') #, region_name='eu-west-1')
+ec2_client = session.client('ec2')
 response = ec2_client.create_key_pair(KeyName=key_name)
 key_material = response['KeyMaterial']
 ssh_commands = ["sudo apt-get update &> /dev/null",
                 "sudo apt-get install -y python3-pip git &> /dev/null",
-                "git clone https://github.com/Mayabach/deploy_balance_loader.git",
+                "git clone https://github.com/Mayabach/deploy_balance_loader.git &> /dev/null",
                 "sudo python3 -m pip install -r deploy_balance_loader/requirements.txt > /dev/null"]
 
 with open(key_pem, 'w') as key_file:
@@ -66,6 +66,55 @@ ec2_client.authorize_security_group_ingress(
     ]
 )
 
+iam_role_name = f"iam-role-{datetime.datetime.now().timestamp()}"
+
+iam = session.client('iam')
+assume_role_policy_document = {
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "ec2.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+        }
+    ]
+}
+role = iam.create_role(
+    RoleName=iam_role_name,
+    AssumeRolePolicyDocument=json.dumps(assume_role_policy_document)
+)
+time.sleep(3)
+role_policy = {
+    "Version": "2012-10-17",
+    "Statement": [{
+        "Effect": "Allow",
+        "Action": [
+            "ec2:RunInstances",
+            "ec2:TerminateInstances",
+            "ec2:DescribeInstances"
+        ],
+        "Resource": "*"
+    }]
+}
+
+iam.put_role_policy(
+    RoleName=iam_role_name,
+    PolicyName=iam_role_name,
+    PolicyDocument=json.dumps(role_policy)
+)
+print(f"IAM role {iam_role_name} created successfully")
+
+instance_profile_name = f"instance_profile-{datetime.datetime.now().timestamp()}"
+
+iam.create_instance_profile(InstanceProfileName=instance_profile_name)
+iam.add_role_to_instance_profile(
+    InstanceProfileName=instance_profile_name,
+    RoleName=iam_role_name
+)
+print(f"Instance profile {instance_profile_name} created successfully")
+
 
 class Instance:
     def __init__(self, instance_id, public_ip, public_dns):
@@ -96,6 +145,13 @@ ubuntu_instances = [Instance(instance['InstanceId'], instance['PublicIpAddress']
 
 # Execute commands on the instances
 for i, instance in enumerate(ubuntu_instances):
+    response = ec2_client.associate_iam_instance_profile(
+        IamInstanceProfile={
+            'Name': instance_profile_name
+        },
+        InstanceId=instance.instanceId
+    )
+
     json_data = {
         "thisInstanceId": instance.instanceId,
         "thisPublicDNS": instance.publicDNS,

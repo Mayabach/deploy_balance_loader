@@ -46,6 +46,7 @@ def spawn_worker():
         MaxCount=1
     )['Instances']
     instance_ids = [instance['InstanceId'] for instance in instances]
+
     print(f"2 instances were created: {instance_ids}")
     # Wait for the instance to reach the running state
     ec2_client.get_waiter('instance_running').wait(InstanceIds=instance_ids)
@@ -58,6 +59,7 @@ def spawn_worker():
                         f"> conf.json; nohup sudo python3 worker.py > worker.log 2>&1 &")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    time.sleep(15)
     ssh.connect(hostname=public_ip_address, username='ubuntu', key_filename=conf["keyName"])
 
     print("Preparing instance through SSH commands")
