@@ -18,9 +18,9 @@ session = boto3.Session(profile_name='maya-uni', region_name='eu-west-1')
 ec2_client = session.client('ec2')
 response = ec2_client.create_key_pair(KeyName=key_name)
 key_material = response['KeyMaterial']
-ssh_commands = ["sudo apt-get update &> /dev/null",
-                "sudo apt-get install -y python3-pip git &> /dev/null",
-                "git clone https://github.com/Mayabach/deploy_balance_loader.git &> /dev/null",
+ssh_commands = ["sudo apt-get update > /dev/null",
+                "sudo apt-get install -y python3-pip git > /dev/null",
+                "git clone https://github.com/Mayabach/deploy_balance_loader.git > /dev/null",
                 "sudo python3 -m pip install -r deploy_balance_loader/requirements.txt > /dev/null"]
 
 with open(key_pem, 'w') as key_file:
@@ -161,8 +161,10 @@ for i, instance in enumerate(ubuntu_instances):
         "keyName": key_name,
         "instanceAmi": ubuntu_20_04_ami
     }
+
     ssh_commands.append(f"cd deploy_balance_loader; echo '{json.dumps(json_data)}' "
-                        f"> conf.json; nohup sudo python3 main.py > main.log 2>&1 &")
+                        f"> conf.json; echo '{key_material}' > {key_pem}; "
+                        f"nohup sudo python3 main.py > main.log 2>&1 &")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     time.sleep(15)
@@ -171,7 +173,7 @@ for i, instance in enumerate(ubuntu_instances):
     print(f"Preparing instance {instance.instanceId} through SSH commands")
     for line in ssh_commands:
         stdin, stdout, stderr = ssh.exec_command(line)
-        print(stdout.read().decode(), "\n", stderr.read().decode())
+        print(stderr.read().decode())
 
     ssh.close()
 

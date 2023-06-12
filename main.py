@@ -60,7 +60,7 @@ def spawn_worker():
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     time.sleep(15)
-    ssh.connect(hostname=public_ip_address, username='ubuntu', key_filename=conf["keyName"])
+    ssh.connect(hostname=public_ip_address, username='ubuntu', key_filename=f"{conf['keyName']}.pem")
 
     print("Preparing instance through SSH commands")
     for line in ssh_commands:
