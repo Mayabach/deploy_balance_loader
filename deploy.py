@@ -1,3 +1,4 @@
+import json
 import time
 
 import boto3
@@ -5,6 +6,7 @@ import datetime
 
 import paramiko as paramiko
 import requests as requests
+from flask import jsonify
 
 # Ubuntu 20.04 Amazon Machine Image (AMI)
 ubuntu_20_04_ami = "ami-0136ddddd07f0584f"
@@ -93,7 +95,7 @@ ubuntu_instances = [Instance(instance['InstanceId'], instance['PublicIpAddress']
 
 # Execute commands on the instances
 for i, instance in enumerate(ubuntu_instances):
-    json = {
+    json_data = {
         "thisInstanceId": instance.instanceId,
         "thisPublicIp": instance.publicIp,
         "otherInstanceId": ubuntu_instances[(i + 1) % 2].instanceId,
@@ -102,7 +104,8 @@ for i, instance in enumerate(ubuntu_instances):
         "keyName": key_name,
         "instanceAmi": ubuntu_20_04_ami
     }
-    ssh_commands.append(f"cd deploy_balance_loader; echo {str(json)} > conf.txt; nohup sudo python3 main.py")
+    # print(json.dumps(json_data))
+    ssh_commands.append(f"cd deploy_balance_loader; echo {json.dumps(json_data)} > conf.json; nohup sudo python3 main.py")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     time.sleep(15)

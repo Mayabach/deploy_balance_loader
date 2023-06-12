@@ -13,7 +13,7 @@ workQueue = []
 workComplete = {}
 maxNumOfWorkers = 3
 numOfWorkers = 0
-with open("conf.txt", 'r') as f:
+with open("conf.json", 'r') as f:
     conf = json.load(f)
 instance_id = conf['thisInstanceId']
 instance_ip = conf['thisPublicIp']
@@ -54,7 +54,7 @@ def spawn_worker():
     response = ec2_client.describe_instances(InstanceIds=instance['InstanceId'])
     # Execute commands on the instances
     json_data = {"parentPublicIp": instance_ip, "otherPublicIp": other_ip, "InstanceId": instance['InstanceId']}
-    ssh_commands.append(f"cd deploy_balance_loader; echo {str(json_data)} > conf.txt; nohup sudo python3 worker.py")
+    ssh_commands.append(f"cd deploy_balance_loader; echo {str(json_data)} > conf.json; nohup sudo python3 worker.py")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(hostname=instance['PublicIpAddress'], username='ubuntu', key_filename=conf["keyName"])

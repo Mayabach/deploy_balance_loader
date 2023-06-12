@@ -4,7 +4,7 @@ from datetime import datetime
 
 import requests
 
-with open("conf.txt", 'r') as f:
+with open("conf.json", 'r') as f:
     conf = json.load(f)
 parent_ip = conf['parentPublicIp']
 instance_id = conf['InstanceId']
