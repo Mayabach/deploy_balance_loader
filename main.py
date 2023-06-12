@@ -106,7 +106,9 @@ def try_get_node_quota():
 def get_work():
     global workQueue
     if len(workQueue) > 0:
-        return jsonify(json.dumps(workQueue.pop().__dict__)), 200
+        job = workQueue.pop()
+        app.logger.info(job)
+        return jsonify(json.dumps(job.__dict__)), 200
     else:
         return jsonify({}), 200
 
