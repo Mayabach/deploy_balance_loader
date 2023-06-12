@@ -18,10 +18,10 @@ session = boto3.Session(profile_name='maya-uni', region_name='eu-west-1')
 ec2_client = session.client('ec2') #, region_name='eu-west-1')
 response = ec2_client.create_key_pair(KeyName=key_name)
 key_material = response['KeyMaterial']
-ssh_commands = ["sudo apt-get update > /dev/null",
-                "sudo apt-get install -y python3-pip git > /dev/null",
+ssh_commands = ["sudo apt-get update &> /dev/null",
+                "sudo apt-get install -y python3-pip git &> /dev/null",
                 "git clone https://github.com/Mayabach/deploy_balance_loader.git",
-                "sudo python3 -m pip install -r deploy_balance_loader/requirements.txt"]
+                "sudo python3 -m pip install -r deploy_balance_loader/requirements.txt > /dev/null"]
 
 with open(key_pem, 'w') as key_file:
     key_file.write(key_material)

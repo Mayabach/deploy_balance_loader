@@ -9,6 +9,8 @@ import boto3
 import paramiko
 from flask import Flask, request, jsonify
 
+from deploy import Instance
+
 workQueue = []
 workComplete = {}
 maxNumOfWorkers = 3
@@ -37,26 +39,30 @@ def spawn_worker():
                     "sudo apt-get install -y python3 git",
                     "git clone https://github.com/Mayabach/deploy_balance_loader.git"]
     # Launch Ubuntu 20.04 instance
-    instance = ec2_client.run_instances(
+    instances = ec2_client.run_instances(
         ImageId=conf["instanceAmi"],
         InstanceType='t3.micro',
         KeyName=conf["keyName"],
-        SecurityGroupIds=conf["securityGroup"],
+        SecurityGroupIds=[conf["securityGroup"]],
         MinCount=1,
         MaxCount=1
-    )['Instances'][0]
+    )['Instances']
+    instance_ids = [instance['InstanceId'] for instance in instances]
+    print(f"2 instances were created: {instance_ids}")
     # Wait for the instance to reach the running state
-    ec2_client.get_waiter('instance_running').wait(InstanceIds=instance['InstanceId'])
-    response = ec2_client.describe_instances(InstanceIds=instance['InstanceId'])
+    ec2_client.get_waiter('instance_running').wait(InstanceIds=instance_ids)
+    response = ec2_client.describe_instances(InstanceIds=instance_ids)
+    ubuntu_instance = [Instance(instance['InstanceId'], instance['PublicIpAddress'], instance['PublicDnsName'])
+                        for reservation in response['Reservations'] for instance in reservation['Instances']]
     # Execute commands on the instances
-    json_data = {"parentPublicDNS": instance_dns, "otherPublicDNS": other_dns, "InstanceId": instance['InstanceId']}
+    json_data = {"parentPublicDNS": instance_dns, "otherPublicDNS": other_dns, "InstanceId": instance_ids[0]}
     ssh_commands.append(f"cd deploy_balance_loader; echo '{json.dumps(json_data)}' "
                         f"> conf.json; nohup sudo python3 worker.py > worker.log 2>&1 &")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(hostname=instance['PublicIpAddress'], username='ubuntu', key_filename=conf["keyName"])
+    ssh.connect(hostname=ubuntu_instance[0].publicIp, username='ubuntu', key_filename=conf["keyName"])
 
-    logging.getLogger().info("Preparing instances through SSH commands")
+    print("Preparing instance through SSH commands")
     for line in ssh_commands:
         stdin, stdout, stderr = ssh.exec_command(line)
         print(stdout.read().decode(), "\n", stderr.read().decode())
