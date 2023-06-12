@@ -17,11 +17,15 @@ ec2_client = session.client('ec2')
 response = ec2_client.create_key_pair(KeyName=key_name)
 key_material = response['KeyMaterial']
 ssh_commands = ["sudo apt-get update",
-                "sudo apt-get install -y python3 git python3-pip",
-                "git clone https://github.com/Mayabach/deploy_balance_loader.git",
-                "cd deploy_balance_loader",
-                "sudo pip3 install -r requirements.txt"
-                "git pull"]
+                "sudo apt-get install -y python3 git",
+                "curl -O https://bootstrap.pypa.io/get-pip.py",
+                "sudo -H python3 get-pip.py",
+                "pip install boto3",
+                "pip install Flask",
+                "pip install paramiko",
+                "pip install Requests",
+                "git clone https://github.com/Mayabach/deploy_balance_loader.git"]
+                # "cd deploy_balance_loader; sudo pip3 install -r requirements.txt"]
 
 with open(key_pem, 'w') as key_file:
     key_file.write(key_material)
@@ -104,8 +108,7 @@ for i, instance in enumerate(ubuntu_instances):
         "keyName": key_name,
         "instanceAmi": ubuntu_20_04_ami
     }
-    ssh_commands.append(f"echo {str(json)} > conf.txt")
-    ssh_commands.append(f"nohup sudo python3 main.py")
+    ssh_commands.append(f"cd deploy_balance_loader; echo {str(json)} > conf.txt; nohup sudo python3 main.py")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     time.sleep(15)

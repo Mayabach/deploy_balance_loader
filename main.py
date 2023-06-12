@@ -39,9 +39,7 @@ def spawn_worker():
     ec2_client = boto3.client('ec2')
     ssh_commands = ["sudo apt-get update",
                     "sudo apt-get install -y python3 git",
-                    "git clone https://github.com/Mayabach/deploy_balance_loader.git",
-                    "cd deploy_balance_loader",
-                    "git pull"]
+                    "git clone https://github.com/Mayabach/deploy_balance_loader.git"]
     # Launch Ubuntu 20.04 instance
     instance = ec2_client.run_instances(
         ImageId=conf["instanceAmi"],
@@ -56,8 +54,7 @@ def spawn_worker():
     response = ec2_client.describe_instances(InstanceIds=instance['InstanceId'])
     # Execute commands on the instances
     json_data = {"parentPublicIp": instance_ip, "otherPublicIp": other_ip, "InstanceId": instance['InstanceId']}
-    ssh_commands.append(f"echo {str(json_data)} > conf.txt")
-    ssh_commands.append(f"nohup sudo python3 worker.py")
+    ssh_commands.append(f"cd deploy_balance_loader; echo {str(json_data)} > conf.txt; nohup sudo python3 worker.py")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(hostname=instance['PublicIpAddress'], username='ubuntu', key_filename=conf["keyName"])
