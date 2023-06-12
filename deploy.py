@@ -1,3 +1,8 @@
+<<<<<<< HEAD
+=======
+import time
+
+>>>>>>> b249cde (first commit)
 import boto3
 import datetime
 
@@ -15,12 +20,23 @@ ec2_client = session.client('ec2')
 response = ec2_client.create_key_pair(KeyName=key_name)
 key_material = response['KeyMaterial']
 ssh_commands = ["sudo apt-get update",
+<<<<<<< HEAD
                 "sudo apt-get install -y python3 git Flask",
                 "git clone https://github.com/Mayabach/deploy_balance_loader.git",
                 "cd deploy_balance_loader"]
 
 with open(key_pem, 'w') as key_file:
     key_file.write(key_material)
+=======
+                "sudo apt-get install -y python3 git flask",
+                "git clone https://github.com/Mayabach/deploy_balance_loader.git",
+                "cd deploy_balance_loader",
+                "git pull"]
+
+with open(key_pem, 'w') as key_file:
+    key_file.write(key_material)
+print(f"Key pair {key_name} was created")
+>>>>>>> b249cde (first commit)
 
 # Create a new security group
 sec_grp_name = f"my-sg-{datetime.datetime.now().timestamp()}"
@@ -29,7 +45,11 @@ response = ec2_client.create_security_group(
     Description="Access instances"
 )
 security_group_id = response['GroupId']
+<<<<<<< HEAD
 
+=======
+print(f"Security group {security_group_id} was created")
+>>>>>>> b249cde (first commit)
 # Determine the machine's public IP address
 try:
     my_ip = requests.get('https://ipinfo.io/ip').text
@@ -38,6 +58,10 @@ try:
 except requests.RequestException as e:
     print('Error occurred while retrieving public IP address:', str(e))
     exit()
+<<<<<<< HEAD
+=======
+print(f"IP retrieved {my_ip}")
+>>>>>>> b249cde (first commit)
 
 # Authorize inbound rules for SSH and HTTP
 ec2_client.authorize_security_group_ingress(
@@ -78,6 +102,10 @@ instances = ec2_client.run_instances(
 )['Instances']
 
 instance_ids = [instance['InstanceId'] for instance in instances]
+<<<<<<< HEAD
+=======
+print(f"2 instances were created: {instance_ids}")
+>>>>>>> b249cde (first commit)
 
 # Wait for the instance to reach the running state
 ec2_client.get_waiter('instance_running').wait(InstanceIds=instance_ids)
@@ -101,7 +129,11 @@ for i, instance in enumerate(ubuntu_instances):
     ssh_commands.append(f"nohup sudo python3 main.py")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+<<<<<<< HEAD
 
+=======
+    time.sleep(15)
+>>>>>>> b249cde (first commit)
     ssh.connect(hostname=instance.publicIp, username='ubuntu', key_filename=key_pem)
 
     print("Preparing instances through SSH commands")
@@ -112,4 +144,11 @@ for i, instance in enumerate(ubuntu_instances):
     ssh.close()
 
 print("Instances initialized.")
+<<<<<<< HEAD
 print("Work can be sent to:{}, {}")  # todo: insert hosts here
+=======
+instance_ips = [instance.instanceId for instance in ubuntu_instances]
+print(f"Work can be sent to: https://<<ip>>:5000/enqueue,\n"
+      f"Work can be retrieved through: https://<<ip>>:5000/pullCompleted\n"
+      f"From IPs: {instance_ips} ")
+>>>>>>> b249cde (first commit)

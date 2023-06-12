@@ -40,7 +40,12 @@ def spawn_worker():
     ssh_commands = ["sudo apt-get update",
                     "sudo apt-get install -y python3 git",
                     "git clone https://github.com/Mayabach/deploy_balance_loader.git",
+<<<<<<< HEAD
                     "cd deploy_balance_loader"]
+=======
+                    "cd deploy_balance_loader",
+                    "git pull"]
+>>>>>>> b249cde (first commit)
     # Launch Ubuntu 20.04 instance
     instance = ec2_client.run_instances(
         ImageId=conf["instanceAmi"],
