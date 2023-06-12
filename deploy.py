@@ -14,12 +14,12 @@ ubuntu_20_04_ami = "ami-0136ddddd07f0584f"
 # Create a new EC2 key pair and save it locally
 key_name = f"CCC-Maya-{datetime.datetime.now().timestamp()}"
 key_pem = f"{key_name}.pem"
-session = boto3.Session(profile_name='maya-uni')
-ec2_client = session.client('ec2')
+session = boto3.Session(profile_name='maya-uni', region_name='eu-west-1')
+ec2_client = session.client('ec2') #, region_name='eu-west-1')
 response = ec2_client.create_key_pair(KeyName=key_name)
 key_material = response['KeyMaterial']
-ssh_commands = ["sudo apt-get update",
-                "sudo apt-get install -y python3-pip git",
+ssh_commands = ["sudo apt-get update > /dev/null",
+                "sudo apt-get install -y python3-pip git > /dev/null",
                 "git clone https://github.com/Mayabach/deploy_balance_loader.git",
                 "sudo python3 -m pip install -r deploy_balance_loader/requirements.txt"]
 

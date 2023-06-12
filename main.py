@@ -32,7 +32,7 @@ class Job:
 
 def spawn_worker():
     global conf, instance_dns
-    ec2_client = boto3.client('ec2')
+    ec2_client = boto3.client('ec2', region_name='eu-west-1')
     ssh_commands = ["sudo apt-get update",
                     "sudo apt-get install -y python3 git",
                     "git clone https://github.com/Mayabach/deploy_balance_loader.git"]
