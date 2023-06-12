@@ -98,9 +98,9 @@ ubuntu_instances = [Instance(instance['InstanceId'], instance['PublicIpAddress']
 for i, instance in enumerate(ubuntu_instances):
     json_data = {
         "thisInstanceId": instance.instanceId,
-        "thisPubliDNS": instance.publicDNS,
+        "thisPublicDNS": instance.publicDNS,
         "otherInstanceId": ubuntu_instances[(i + 1) % 2].instanceId,
-        "otherPubliDNS": ubuntu_instances[(i + 1) % 2].publicDNS,
+        "otherPublicDNS": ubuntu_instances[(i + 1) % 2].publicDNS,
         "securityGroup": security_group_id,
         "keyName": key_name,
         "instanceAmi": ubuntu_20_04_ami

@@ -100,6 +100,11 @@ def get_work():
         return jsonify({}), 200
 
 
+@app.route('/health', methods=['PUT'])
+def health():
+    return jsonify({'OK'}), 200
+
+
 @app.route('/enqueue', methods=['PUT'])
 def enqueue():
     global instance_id, workQueue
@@ -109,7 +114,7 @@ def enqueue():
                       int(request.args.get('iterations', 1)),
                       datetime.datetime.now().timestamp())
     except:
-        return jsonify({"Error: request not valid"})
+        return jsonify({"Error: request not valid"}), 400
 
     workQueue.append(new_job)
     return jsonify({'jobId': new_job.jobId}), 200
