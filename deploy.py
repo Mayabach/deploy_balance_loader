@@ -104,8 +104,7 @@ for i, instance in enumerate(ubuntu_instances):
         "keyName": key_name,
         "instanceAmi": ubuntu_20_04_ami
     }
-    # print(json.dumps(json_data))
-    ssh_commands.append(f"cd deploy_balance_loader; echo {json.dumps(json_data)} > conf.json; nohup sudo python3 main.py")
+    ssh_commands.append(f"cd deploy_balance_loader; echo '{json.dumps(json_data)}' > conf.json; nohup sudo python3 main.py")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     time.sleep(15)
