@@ -77,7 +77,7 @@ def timer_10_sec():
             if numOfWorkers < maxNumOfWorkers:
                 spawn_worker()
             else:
-                r = requests.get(f'https://{other_dns}:5000/getQuota', headers={'Accept': 'application/json'})
+                r = requests.get(f'http://{other_dns}:5000/getQuota', headers={'Accept': 'application/json'})
                 if r:
                     maxNumOfWorkers += 1
 
@@ -134,7 +134,7 @@ def pull_completed():
     if len(result) > 0:
         return jsonify({'jobId': job_id, 'result': result}), 200
     try:
-        r = requests.post(f'https://{other_dns}:5000/pullCompletedInternal', params={'jobId': job_id})
+        r = requests.post(f'http://{other_dns}:5000/pullCompletedInternal', params={'jobId': job_id})
         return r
     except:
         return jsonify({}), 404

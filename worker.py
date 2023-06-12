@@ -20,23 +20,23 @@ def work(buffer, iterations):
 
 def kill_me():
     global parent_dns, instance_id
-    requests.post(f'https://{parent_dns}:5000/killMe', params={'workerId': instance_id})
+    requests.post(f'http://{parent_dns}:5000/killMe', params={'workerId': instance_id})
 
 
 def do_work(job):
     result = work(job['text'], job['iters'])
-    requests.post(f'https://{parent_dns}:5000/finishedWork', data=result, params={'jobId': job['jobId'], })
+    requests.post(f'http://{parent_dns}:5000/finishedWork', data=result, params={'jobId': job['jobId'], })
 
 
 def get_work():
     global parent_dns, other_dns
     last_time = datetime.now().timestamp()
     while (datetime.now().timestamp() - last_time) <= 600:
-        job = requests.get(f'https://{parent_dns}:5000/getWork').json()
+        job = requests.get(f'http://{parent_dns}:5000/getWork').json()
         if 'jobId' in job:
             do_work(job)
         else:
-            job = requests.get(f'https://{other_dns}:5000/getWork').json()
+            job = requests.get(f'http://{other_dns}:5000/getWork').json()
             if 'jobId' in job:
                 do_work(job)
         time.sleep(60)

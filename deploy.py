@@ -178,4 +178,4 @@ for i, instance in enumerate(ubuntu_instances):
 print("Instances initialized.")
 instance_dns = [instance.publicDNS for instance in ubuntu_instances]
 for dns_name in instance_dns:
-    print(f"Work can be sent to: https://{dns_name}:5000")
+    print(f"Work can be sent to: http://{dns_name}:5000")
