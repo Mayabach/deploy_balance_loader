@@ -18,7 +18,10 @@ with open("conf.json", 'r') as f:
 instance_id = conf['thisInstanceId']
 instance_dns = conf['thisPublicDNS']
 other_dns = conf['otherPublicDNS']
+key_name = conf['keyName']
+key_pem = f"{key_name}.pem"
 
+logging.basicConfig(filename='main.log', level=logging.DEBUG)
 app = Flask(__name__)
 
 
@@ -33,9 +36,9 @@ class Job:
 def spawn_worker():
     global conf, instance_dns
     ec2_client = boto3.client('ec2', region_name='eu-west-1')
-    ssh_commands = ["sudo apt-get update",
-                    "sudo apt-get install -y python3 git",
-                    "git clone https://github.com/Mayabach/deploy_balance_loader.git"]
+    ssh_commands = ["sudo apt-get update > /dev/null",
+                    "sudo apt-get install -y python3 git > /dev/null",
+                    "git clone https://github.com/Mayabach/deploy_balance_loader.git > /dev/null"]
     # Launch Ubuntu 20.04 instance
     instances = ec2_client.run_instances(
         ImageId=conf["instanceAmi"],
@@ -47,7 +50,7 @@ def spawn_worker():
     )['Instances']
     instance_ids = [instance['InstanceId'] for instance in instances]
 
-    print(f"2 instances were created: {instance_ids}")
+    app.logger.info(f"2 instances were created: {instance_ids}")
     # Wait for the instance to reach the running state
     ec2_client.get_waiter('instance_running').wait(InstanceIds=instance_ids)
     response = ec2_client.describe_instances(InstanceIds=instance_ids)
@@ -60,12 +63,13 @@ def spawn_worker():
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     time.sleep(15)
-    ssh.connect(hostname=public_ip_address, username='ubuntu', key_filename=f"{conf['keyName']}.pem")
+    app.logger.info(f"Trying to connect to {public_ip_address} with ")
+    ssh.connect(hostname=public_ip_address, username='ubuntu', key_filename=key_pem)
 
-    print("Preparing instance through SSH commands")
+    app.logger.info("Preparing instance through SSH commands")
     for line in ssh_commands:
         stdin, stdout, stderr = ssh.exec_command(line)
-        print(stdout.read().decode(), "\n", stderr.read().decode())
+        app.logger.error(stderr.read().decode())
 
     ssh.close()
 
@@ -174,7 +178,7 @@ if __name__ == "__main__":
     try:
         handler = threading.Thread(target=handle_workers)
         handler.start()
-        app.run(host='0.0.0.0', port=5000)
+        app.run(host='0.0.0.0', port=5000, debug=True)
     except:
         exit()
     finally:
