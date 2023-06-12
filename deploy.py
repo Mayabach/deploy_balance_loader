@@ -112,7 +112,7 @@ for i, instance in enumerate(ubuntu_instances):
     time.sleep(15)
     ssh.connect(hostname=instance.publicIp, username='ubuntu', key_filename=key_pem)
 
-    print("Preparing instances through SSH commands")
+    print(f"Preparing instance {instance.instanceId} through SSH commands")
     for line in ssh_commands:
         stdin, stdout, stderr = ssh.exec_command(line)
         print(stdout.read().decode(), "\n", stderr.read().decode())

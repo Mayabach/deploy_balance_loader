@@ -9,8 +9,6 @@ import boto3
 import paramiko
 from flask import Flask, request, jsonify
 
-from deploy import Instance
-
 workQueue = []
 workComplete = {}
 maxNumOfWorkers = 3
@@ -52,15 +50,15 @@ def spawn_worker():
     # Wait for the instance to reach the running state
     ec2_client.get_waiter('instance_running').wait(InstanceIds=instance_ids)
     response = ec2_client.describe_instances(InstanceIds=instance_ids)
-    ubuntu_instance = [Instance(instance['InstanceId'], instance['PublicIpAddress'], instance['PublicDnsName'])
-                        for reservation in response['Reservations'] for instance in reservation['Instances']]
+    public_ip_address = [instance['PublicIpAddress']for reservation in response['Reservations']
+                        for instance in reservation['Instances']][0]
     # Execute commands on the instances
     json_data = {"parentPublicDNS": instance_dns, "otherPublicDNS": other_dns, "InstanceId": instance_ids[0]}
     ssh_commands.append(f"cd deploy_balance_loader; echo '{json.dumps(json_data)}' "
                         f"> conf.json; nohup sudo python3 worker.py > worker.log 2>&1 &")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(hostname=ubuntu_instance[0].publicIp, username='ubuntu', key_filename=conf["keyName"])
+    ssh.connect(hostname=public_ip_address, username='ubuntu', key_filename=conf["keyName"])
 
     print("Preparing instance through SSH commands")
     for line in ssh_commands:
