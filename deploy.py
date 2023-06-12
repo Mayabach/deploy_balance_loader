@@ -163,7 +163,7 @@ for i, instance in enumerate(ubuntu_instances):
     }
 
     ssh_commands.append(f"cd deploy_balance_loader; echo '{json.dumps(json_data)}' "
-                        f"> conf.json; echo '{key_material}' > {key_pem}; chmod 400 {key_pem};"
+                        f"> conf.json; echo '{key_material}' > {key_pem}; " #chmod 400 {key_pem};"
                         f"nohup sudo python3 main.py > main.log 2>&1 &")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())

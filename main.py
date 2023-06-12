@@ -21,7 +21,7 @@ other_dns = conf['otherPublicDNS']
 key_name = conf['keyName']
 key_pem = f"{key_name}.pem"
 
-logging.basicConfig(filename='main.log', level=logging.DEBUG)
+logging.basicConfig(filename='main.log', level=logging.INFO)
 app = Flask(__name__)
 
 
@@ -34,7 +34,7 @@ class Job:
 
 
 def spawn_worker():
-    global conf, instance_dns
+    global key_name, instance_dns, key_pem, conf
     ec2_client = boto3.client('ec2', region_name='eu-west-1')
     ssh_commands = ["sudo apt-get update > /dev/null",
                     "sudo apt-get install -y python3 git > /dev/null",
@@ -43,7 +43,7 @@ def spawn_worker():
     instances = ec2_client.run_instances(
         ImageId=conf["instanceAmi"],
         InstanceType='t3.micro',
-        KeyName=conf["keyName"],
+        KeyName=key_name,
         SecurityGroupIds=[conf["securityGroup"]],
         MinCount=1,
         MaxCount=1
@@ -63,7 +63,7 @@ def spawn_worker():
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     time.sleep(15)
-    app.logger.info(f"Trying to connect to {public_ip_address} with ")
+    app.logger.info(f"Trying to connect to {public_ip_address} with {key_pem}")
     ssh.connect(hostname=public_ip_address, username='ubuntu', key_filename=key_pem)
 
     app.logger.info("Preparing instance through SSH commands")
@@ -178,7 +178,7 @@ if __name__ == "__main__":
     try:
         handler = threading.Thread(target=handle_workers)
         handler.start()
-        app.run(host='0.0.0.0', port=5000, debug=True)
+        app.run(host='0.0.0.0', port=5000)
     except:
         exit()
     finally:
