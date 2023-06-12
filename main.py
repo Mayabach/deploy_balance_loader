@@ -123,7 +123,7 @@ def enqueue():
     global instance_id, workQueue
     try:
         new_job = Job(f"{instance_id}-{datetime.datetime.now().timestamp()}",
-                      request.data.decode('utf-8').encode(),
+                      request.data,
                       int(request.args.get('iterations', 1)),
                       datetime.datetime.now().timestamp())
     except:
