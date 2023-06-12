@@ -163,7 +163,13 @@ def kill_instance():
 
 
 if __name__ == "__main__":
-    app = threading.Thread(target=run_app)
-    app.start()
-    handler = threading.Thread(target=handle_workers)
-    handler.start()
+    try:
+        application = threading.Thread(target=run_app)
+        application.start()
+        handler = threading.Thread(target=handle_workers)
+        handler.start()
+    except:
+        exit()
+    finally:
+        application.join()
+        handler.join()

@@ -19,7 +19,7 @@ key_material = response['KeyMaterial']
 ssh_commands = ["sudo apt-get update",
                 "sudo apt-get install -y python3-pip git",
                 "git clone https://github.com/Mayabach/deploy_balance_loader.git",
-                "sudo pip3 install -r deploy_balance_loader/requirements.txt"]
+                "sudo python3 -m pip install -r deploy_balance_loader/requirements.txt"]
 
 with open(key_pem, 'w') as key_file:
     key_file.write(key_material)
