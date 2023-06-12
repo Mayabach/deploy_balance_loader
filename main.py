@@ -50,12 +50,12 @@ def spawn_worker():
     )['Instances']
     instance_ids = [instance['InstanceId'] for instance in instances]
 
-    app.logger.info(f"2 instances were created: {instance_ids}")
+    app.logger.info(f"An instance was created: {instance_ids}")
     # Wait for the instance to reach the running state
     ec2_client.get_waiter('instance_running').wait(InstanceIds=instance_ids)
     response = ec2_client.describe_instances(InstanceIds=instance_ids)
-    public_ip_address = [instance['PublicIpAddress']for reservation in response['Reservations']
-                        for instance in reservation['Instances']][0]
+    public_dns_address = [instance['PublicDnsName'] for reservation in response['Reservations']
+                          for instance in reservation['Instances']][0]
     # Execute commands on the instances
     json_data = {"parentPublicDNS": instance_dns, "otherPublicDNS": other_dns, "InstanceId": instance_ids[0]}
     ssh_commands.append(f"cd deploy_balance_loader; echo '{json.dumps(json_data)}' "
@@ -63,8 +63,8 @@ def spawn_worker():
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     time.sleep(15)
-    app.logger.info(f"Trying to connect to {public_ip_address} with {key_pem}")
-    ssh.connect(hostname=public_ip_address, username='ubuntu', key_filename=key_pem)
+    app.logger.info(f"Trying to connect to {public_dns_address} with {key_pem}")
+    ssh.connect(hostname=public_dns_address, username='ubuntu', key_filename=key_pem)
 
     app.logger.info("Preparing instance through SSH commands")
     for line in ssh_commands:
