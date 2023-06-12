@@ -16,8 +16,8 @@ numOfWorkers = 0
 with open("conf.json", 'r') as f:
     conf = json.load(f)
 instance_id = conf['thisInstanceId']
-instance_ip = conf['thisPublicIp']
-other_ip = conf['otherPublicIp']
+instance_dns = conf['thisPublicDNS']
+other_dns = conf['otherPublicDNS']
 
 app = Flask(__name__)
 
@@ -30,12 +30,8 @@ class Job:
         self.time = r_time
 
 
-def run_app():
-    app.run(host='0.0.0.0', port=5000)
-
-
 def spawn_worker():
-    global conf, instance_ip
+    global conf, instance_dns
     ec2_client = boto3.client('ec2')
     ssh_commands = ["sudo apt-get update",
                     "sudo apt-get install -y python3 git",
@@ -53,9 +49,9 @@ def spawn_worker():
     ec2_client.get_waiter('instance_running').wait(InstanceIds=instance['InstanceId'])
     response = ec2_client.describe_instances(InstanceIds=instance['InstanceId'])
     # Execute commands on the instances
-    json_data = {"parentPublicIp": instance_ip, "otherPublicIp": other_ip, "InstanceId": instance['InstanceId']}
-    ssh_commands.append(f"cd deploy_balance_loader; echo '{json.dumps(json_data)}' > conf.json; nohup sudo python3 "
-                        f"worker.py")
+    json_data = {"parentPublicIp": instance_dns, "otherPublicIp": other_dns, "InstanceId": instance['InstanceId']}
+    ssh_commands.append(f"cd deploy_balance_loader; echo '{json.dumps(json_data)}' "
+                        f"> conf.json; nohup sudo python3 worker.py > worker.log 2>&1 &")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(hostname=instance['PublicIpAddress'], username='ubuntu', key_filename=conf["keyName"])
@@ -75,7 +71,7 @@ def timer_10_sec():
             if numOfWorkers < maxNumOfWorkers:
                 spawn_worker()
             else:
-                r = requests.get(f'https://{other_ip}:5000/getQuota', headers={'Accept': 'application/json'})
+                r = requests.get(f'https://{other_dns}:5000/getQuota', headers={'Accept': 'application/json'})
                 if r:
                     maxNumOfWorkers += 1
 
@@ -121,13 +117,13 @@ def enqueue():
 
 @app.route('/pullCompleted', methods=['POST'])
 def pull_completed():
-    global workComplete, other_ip
+    global workComplete, other_dns
     job_id = request.args.get('jobId')
     result = workComplete.pop(job_id)
     if len(result) > 0:
         return jsonify({'jobId': job_id, 'result': result}), 200
     try:
-        r = requests.post(f'https://{other_ip}:5000/pullCompletedInternal', params={'jobId': job_id})
+        r = requests.post(f'https://{other_dns}:5000/pullCompletedInternal', params={'jobId': job_id})
         return r
     except:
         return jsonify({}), 404
@@ -165,12 +161,10 @@ def kill_instance():
 
 if __name__ == "__main__":
     try:
-        application = threading.Thread(target=run_app)
-        application.start()
         handler = threading.Thread(target=handle_workers)
         handler.start()
+        app.run(host='0.0.0.0', port=5000)
     except:
         exit()
     finally:
-        application.join()
         handler.join()

@@ -68,9 +68,10 @@ ec2_client.authorize_security_group_ingress(
 
 
 class Instance:
-    def __init__(self, instance_id, public_ip):
+    def __init__(self, instance_id, public_ip, public_dns):
         self.instanceId = instance_id
         self.publicIp = public_ip
+        self.publicDNS = public_dns
 
 
 # Launch Ubuntu 20.04 instance
@@ -90,21 +91,22 @@ print(f"2 instances were created: {instance_ids}")
 ec2_client.get_waiter('instance_running').wait(InstanceIds=instance_ids)
 response = ec2_client.describe_instances(InstanceIds=instance_ids)
 
-ubuntu_instances = [Instance(instance['InstanceId'], instance['PublicIpAddress']) for reservation
-                    in response['Reservations'] for instance in reservation['Instances']]
+ubuntu_instances = [Instance(instance['InstanceId'], instance['PublicIpAddress'], instance['PublicDnsName'])
+                    for reservation in response['Reservations'] for instance in reservation['Instances']]
 
 # Execute commands on the instances
 for i, instance in enumerate(ubuntu_instances):
     json_data = {
         "thisInstanceId": instance.instanceId,
-        "thisPublicIp": instance.publicIp,
+        "thisPubliDNS": instance.publicDNS,
         "otherInstanceId": ubuntu_instances[(i + 1) % 2].instanceId,
-        "otherPublicIp": ubuntu_instances[(i + 1) % 2].publicIp,
+        "otherPubliDNS": ubuntu_instances[(i + 1) % 2].publicDNS,
         "securityGroup": security_group_id,
         "keyName": key_name,
         "instanceAmi": ubuntu_20_04_ami
     }
-    ssh_commands.append(f"cd deploy_balance_loader; echo '{json.dumps(json_data)}' > conf.json; nohup sudo python3 main.py")
+    ssh_commands.append(f"cd deploy_balance_loader; echo '{json.dumps(json_data)}' "
+                        f"> conf.json; nohup sudo python3 main.py > main.log 2>&1 &")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     time.sleep(15)
@@ -118,7 +120,7 @@ for i, instance in enumerate(ubuntu_instances):
     ssh.close()
 
 print("Instances initialized.")
-instance_ips = [instance.publicIp for instance in ubuntu_instances]
-print(f"Work can be sent to: https://<<ip>>:5000/enqueue,\n"
+instance_dns = [instance.publicDNS for instance in ubuntu_instances]
+print(f"Work can be sent to: https://<<dns-name>>:5000/enqueue,\n"
       f"Work can be retrieved through: https://<<ip>>:5000/pullCompleted\n"
-      f"From IPs: {instance_ips} ")
+      f"From IPs: {instance_dns} ")

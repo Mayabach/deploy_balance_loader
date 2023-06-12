@@ -8,7 +8,7 @@ with open("conf.json", 'r') as f:
     conf = json.load(f)
 parent_ip = conf['parentPublicIp']
 instance_id = conf['InstanceId']
-other_ip = conf['otherPublicIp']
+other_dns = conf['otherPublicIp']
 
 
 def work(buffer, iterations):
@@ -30,7 +30,7 @@ def do_work(job):
 
 
 def get_work():
-    global parent_ip, other_ip
+    global parent_ip, other_dns
     last_time = datetime.now().timestamp()
     while (datetime.now().timestamp() - last_time) <= 600:
         job = requests.get(f'https://{parent_ip}:5000/getWork').json()
