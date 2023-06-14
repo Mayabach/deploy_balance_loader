@@ -184,7 +184,7 @@ def kill_instance():
         ec2_client.terminate_instances(InstanceIds=[worker_id])
         app.logger.info(f"killed instance {worker_id}")
         numOfWorkers += 1
-        return jsonify({}), 200
+        return jsonify({"OK": f"Instance {instance_id} terminated"}), 200
     except:
         return jsonify({"Error": "Could not delete resource"}), 404
 
