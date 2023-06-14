@@ -54,7 +54,7 @@ ec2_client.authorize_security_group_ingress(
             'ToPort': 22,
             'IpProtocol': 'tcp',
             'UserIdGroupPairs': [{'GroupId': security_group_id}],
-            'IpRanges': [{'CidrIp': f'{my_ip}/32'}]
+            'IpRanges': [{'CidrIp': '0.0.0.0/0'}]
         },
         {
             'FromPort': 5000,
@@ -163,7 +163,7 @@ for i, instance in enumerate(ubuntu_instances):
     }
 
     ssh_commands.append(f"cd deploy_balance_loader; echo '{json.dumps(json_data)}' "
-                        f"> conf.json; echo '{key_material}' > {key_pem}; " #chmod 400 {key_pem};"
+                        f"> conf.json; echo '{key_material}' > {key_pem}; chmod 400 {key_pem};"
                         f"nohup sudo python3 main.py > main.log 2>&1 &")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -173,7 +173,9 @@ for i, instance in enumerate(ubuntu_instances):
     print(f"Preparing instance {instance.instanceId} through SSH commands")
     for line in ssh_commands:
         stdin, stdout, stderr = ssh.exec_command(line)
-        print(stderr.read().decode())
+        err = stderr.read().decode()
+        if err:
+            print(err)
 
     ssh.close()
 

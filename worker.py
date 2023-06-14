@@ -24,8 +24,9 @@ def kill_me():
 
 
 def do_work(job):
-    result = work(job['text'], job['iters'])
-    requests.post(f'http://{parent_dns}:5000/finishedWork', params={'jobId': job['jobId'], 'result': result})
+    job_dict = json.load(job)
+    result = work(job_dict['text'], job_dict['iters'])
+    requests.post(f'http://{parent_dns}:5000/finishedWork', params={'jobId': job_dict['jobId'], 'result': result})
 
 
 def get_work():

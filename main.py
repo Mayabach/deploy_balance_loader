@@ -83,7 +83,7 @@ def timer_10_sec():
                 spawn_worker()
             else:
                 r = requests.get(f'http://{other_dns}:5000/getQuota', headers={'Accept': 'application/json'})
-                if r:
+                if r.status_code == 200:
                     maxNumOfWorkers += 1
 
 
@@ -99,8 +99,8 @@ def try_get_node_quota():
     global numOfWorkers, maxNumOfWorkers
     if numOfWorkers < maxNumOfWorkers:
         maxNumOfWorkers -= 1
-        return True, 200
-    return False, 400
+        return jsonify({}), 200
+    return jsonify({}), 400
 
 
 @app.route('/getWork', methods=['GET'])
@@ -116,7 +116,7 @@ def get_work():
 
 @app.route('/health', methods=['GET'])
 def health():
-    return jsonify({'OK'}), 200
+    return jsonify({}), 200
 
 
 @app.route('/enqueue', methods=['PUT'])
@@ -138,12 +138,12 @@ def enqueue():
 def pull_completed():
     global workComplete, other_dns
     job_id = request.args.get('jobId')
-    result = workComplete.pop(job_id)
-    if len(result) > 0:
+    if job_id in workComplete:
+        result = workComplete.pop(job_id)
         return jsonify({'jobId': job_id, 'result': result}), 200
     try:
         r = requests.post(f'http://{other_dns}:5000/pullCompletedInternal', params={'jobId': job_id})
-        return r
+        return r.json(), r.status_code
     except:
         return jsonify({}), 404
 
@@ -173,10 +173,15 @@ def finished_work():
 
 @app.route('/killMe', methods=['POST'])
 def kill_instance():
-    ec2_client = boto3.client('ec2')
-    worker_id = request.args.get('workerId')
-    ec2_client.terminate_instances(InstanceIds=[worker_id])
-    app.logger.info(f"killed instance {worker_id}")
+    try:
+        ec2_client = boto3.client('ec2', region_name='eu-west-1')
+        worker_id = request.args.get('workerId')
+        ec2_client.terminate_instances(InstanceIds=[worker_id])
+        app.logger.info(f"killed instance {worker_id}")
+        return jsonify({}), 200
+    except:
+        return jsonify({"Error": "Could not delete resource"}), 404
+
 
 
 if __name__ == "__main__":
