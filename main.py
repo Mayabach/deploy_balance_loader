@@ -138,7 +138,10 @@ def enqueue():
 @app.route('/pullCompleted', methods=['POST'])
 def pull_completed():
     global workComplete, other_dns
-    top = request.args.get('top', 1)
+    try:
+        top = int(request.args.get('top', 1))
+    except:
+        return jsonify({"Error": "top usage is wrong, please input an integer"}), 404
     if len(workComplete) > 0:
         jobs = workComplete[-top:]
         return jsonify(jobs), 200
@@ -152,7 +155,7 @@ def pull_completed():
 @app.route('/pullCompletedInternal', methods=['POST'])
 def pull_completed_internal():
     global workComplete
-    top = request.args.get('top', 1)
+    top = int(request.args.get('top', 1))
     if len(workComplete) > 0:
         jobs = workComplete[-top:]
         return jsonify(jobs), 200

@@ -14,7 +14,7 @@ ubuntu_20_04_ami = "ami-0136ddddd07f0584f"
 # Create a new EC2 key pair and save it locally
 key_name = f"CCC-Maya-{datetime.datetime.now().timestamp()}"
 key_pem = f"{key_name}.pem"
-session = boto3.Session(profile_name='maya-uni', region_name='eu-west-1')
+session = boto3.Session(region_name='eu-west-1')
 ec2_client = session.client('ec2')
 response = ec2_client.create_key_pair(KeyName=key_name)
 key_material = response['KeyMaterial']
@@ -163,7 +163,7 @@ for i, instance in enumerate(ubuntu_instances):
     }
 
     ssh_commands.append(f"cd deploy_balance_loader; echo '{json.dumps(json_data)}' "
-                        f"> conf.json; echo '{key_material}' > {key_pem}; chmod 400 {key_pem};"
+                        f"> conf.json; echo '{key_material}' > {key_pem}; sudo chmod 400 {key_pem};"
                         f"nohup sudo python3 main.py > main.log 2>&1 &")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
