@@ -10,7 +10,7 @@ import paramiko
 from flask import Flask, request, jsonify
 
 workQueue = []
-workComplete = {}
+workComplete = []
 maxNumOfWorkers = 3
 numOfWorkers = 0
 worker_spawn_lock = threading.Lock()
@@ -70,8 +70,9 @@ def spawn_worker():
     app.logger.info("Preparing instance through SSH commands")
     for line in ssh_commands:
         stdin, stdout, stderr = ssh.exec_command(line)
-        app.logger.error(stderr.read().decode())
-
+        err = stderr.read().decode()
+        if err:
+            print(err)
     ssh.close()
 
 
@@ -137,26 +138,26 @@ def enqueue():
 @app.route('/pullCompleted', methods=['POST'])
 def pull_completed():
     global workComplete, other_dns
-    job_id = request.args.get('jobId')
-    if job_id in workComplete:
-        result = workComplete.pop(job_id)
-        return jsonify({'jobId': job_id, 'result': result}), 200
+    top = request.args.get('top', 1)
+    if len(workComplete) > 0:
+        jobs = workComplete[-top:]
+        return jsonify(jobs), 200
     try:
-        r = requests.post(f'http://{other_dns}:5000/pullCompletedInternal', params={'jobId': job_id})
+        r = requests.post(f'http://{other_dns}:5000/pullCompletedInternal', params={'top': top})
         return r.json(), r.status_code
     except:
-        return jsonify({"Error": "jobId didn't match results, check your input or wait and try again"}), 404
+        return jsonify({"Error": "wait and try again later"}), 404
 
 
 @app.route('/pullCompletedInternal', methods=['POST'])
 def pull_completed_internal():
     global workComplete
-    job_id = request.args.get('jobId')
-    results = workComplete.pop(job_id)
-    if len(results) > 0:
-        return jsonify({'jobId': job_id, 'result': results}), 200
+    top = request.args.get('top', 1)
+    if len(workComplete) > 0:
+        jobs = workComplete[-top:]
+        return jsonify(jobs), 200
     else:
-        return jsonify({"Error": "jobId didn't match results, check your input or wait and try again"}), 404
+        return jsonify({"Error": "wait and try again later"}), 404
 
 
 @app.route('/finishedWork', methods=['POST'])
@@ -165,7 +166,7 @@ def finished_work():
     try:
         job_id = request.args.get('jobId')
         result = request.args.get('result', 'N/A')
-        workComplete[job_id] = result
+        workComplete.append({'jobId': job_id, 'result': result})
         return jsonify({'jobId': job_id, 'result': result})
     except:
         return jsonify({}), 404
@@ -173,15 +174,16 @@ def finished_work():
 
 @app.route('/killMe', methods=['POST'])
 def kill_instance():
+    global numOfWorkers
     try:
         ec2_client = boto3.client('ec2', region_name='eu-west-1')
         worker_id = request.args.get('workerId')
         ec2_client.terminate_instances(InstanceIds=[worker_id])
         app.logger.info(f"killed instance {worker_id}")
+        numOfWorkers += 1
         return jsonify({}), 200
     except:
         return jsonify({"Error": "Could not delete resource"}), 404
-
 
 
 if __name__ == "__main__":
