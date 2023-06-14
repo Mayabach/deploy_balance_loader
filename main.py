@@ -13,6 +13,7 @@ workQueue = []
 workComplete = {}
 maxNumOfWorkers = 3
 numOfWorkers = 0
+worker_spawn_lock = threading.Lock()
 with open("conf.json", 'r') as f:
     conf = json.load(f)
 instance_id = conf['thisInstanceId']
@@ -31,7 +32,6 @@ class Job:
         self.text = text
         self.iters = iterations
         self.time = r_time
-
 
 
 def spawn_worker():
@@ -89,8 +89,9 @@ def timer_10_sec():
 
 def handle_workers():
     while True:
-        timer_10_sec()
-        time.sleep(10)
+        with worker_spawn_lock:
+            timer_10_sec()
+            time.sleep(10)
 
 
 @app.route('/getQuota', methods=['GET'])
@@ -163,7 +164,7 @@ def finished_work():
     global workComplete
     try:
         job_id = request.args.get('jobId')
-        result = request.data
+        result = request.args.get('result', 'N/A')
         workComplete[job_id] = result
         return jsonify({'jobId': job_id, 'result': result})
     except:
@@ -175,6 +176,7 @@ def kill_instance():
     ec2_client = boto3.client('ec2')
     worker_id = request.args.get('workerId')
     ec2_client.terminate_instances(InstanceIds=[worker_id])
+    app.logger.info(f"killed instance {worker_id}")
 
 
 if __name__ == "__main__":
