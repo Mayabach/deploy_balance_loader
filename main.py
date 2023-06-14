@@ -147,7 +147,7 @@ def pull_completed():
         return jsonify(jobs), 200
     try:
         r = requests.post(f'http://{other_dns}:5000/pullCompletedInternal', params={'top': top})
-        return r.json(), r.status_code
+        return jsonify(r.json()), r.status_code
     except:
         return jsonify({"Error": "wait and try again later"}), 404
 
