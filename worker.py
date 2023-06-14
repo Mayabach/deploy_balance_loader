@@ -24,7 +24,7 @@ def kill_me():
 
 
 def do_work(job):
-    job_dict = json.load(job)
+    job_dict = json.loads(job)
     result = work(job_dict['text'], job_dict['iters'])
     requests.post(f'http://{parent_dns}:5000/finishedWork', params={'jobId': job_dict['jobId'], 'result': result})
 
@@ -40,7 +40,7 @@ def get_work():
             job = requests.get(f'http://{other_dns}:5000/getWork').json()
             if 'jobId' in job:
                 do_work(job)
-        time.sleep(60)
+        time.sleep(15)
     kill_me()
 
 

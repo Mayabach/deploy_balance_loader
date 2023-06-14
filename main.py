@@ -75,10 +75,10 @@ def spawn_worker():
     ssh.close()
 
 
-def timer_10_sec():
+def timer_30_sec():
     global workQueue, numOfWorkers, maxNumOfWorkers
     if len(workQueue) > 0:
-        if (datetime.datetime.now().timestamp() - workQueue[0].time) > 15:
+        if (datetime.datetime.now().timestamp() - workQueue[0].time) > 30:
             if numOfWorkers < maxNumOfWorkers:
                 spawn_worker()
             else:
@@ -90,7 +90,7 @@ def timer_10_sec():
 def handle_workers():
     while True:
         with worker_spawn_lock:
-            timer_10_sec()
+            timer_30_sec()
             time.sleep(10)
 
 
@@ -145,7 +145,7 @@ def pull_completed():
         r = requests.post(f'http://{other_dns}:5000/pullCompletedInternal', params={'jobId': job_id})
         return r.json(), r.status_code
     except:
-        return jsonify({}), 404
+        return jsonify({"Error": "jobId didn't match results, check your input or wait and try again"}), 404
 
 
 @app.route('/pullCompletedInternal', methods=['POST'])
@@ -156,7 +156,7 @@ def pull_completed_internal():
     if len(results) > 0:
         return jsonify({'jobId': job_id, 'result': results}), 200
     else:
-        return jsonify({}), 404
+        return jsonify({"Error": "jobId didn't match results, check your input or wait and try again"}), 404
 
 
 @app.route('/finishedWork', methods=['POST'])
